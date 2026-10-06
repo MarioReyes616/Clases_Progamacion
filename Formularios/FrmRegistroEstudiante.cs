@@ -14,6 +14,8 @@ using System.Windows.Forms;
 
 namespace RegistroEstudiantes.Formularios
 {
+
+
     public partial class FrmRegistroEstudiante : Form
     {
         private readonly EstudianteRepository estudianteRepository = new();
@@ -122,6 +124,19 @@ namespace RegistroEstudiantes.Formularios
 
             // El carnet no se modifica durante la edición
             txtCarnet.ReadOnly = true;
+        }
+        private async void CargarAreasAsync()
+        {
+            List<OpcionCatalogo> areas =
+              await  catalogoRepository.ListarAreasasync();
+
+            cboArea.DataSource = null;
+
+            cboArea.DisplayMember = "Nombre";
+            cboArea.ValueMember = "Id";
+            cboArea.DataSource = areas;
+
+            cboArea.SelectedIndex = -1;
         }
         private void CargarAreas()
         {
@@ -454,8 +469,83 @@ namespace RegistroEstudiantes.Formularios
                 cboCarrera.Enabled = false;
             }
         }
+        private async void btnGuardar_Click_2(object sender, EventArgs e)
+        {
+            bool cerrarFormulario = false;
 
-        private void btnGuardar_Click(object sender, EventArgs e)
+            try
+            {
+                // 1. Validar controles
+                if (!ValidarControlesFormulario())
+                    return;
+
+                // 2. Construir el objeto
+                Estudiante estudiante = ConstruirEstudianteDesdeFormulario();
+
+                // 3. Validar reglas del modelo
+                if (!ValidarFormulario(estudiante))
+                    return;
+
+                btnGuardar.Enabled = false;
+                UseWaitCursor = true;
+
+                if (estudianteEnEdicion == null)
+                {
+                    // NUEVO ESTUDIANTE
+                    if (await estudianteRepository.ExisteCarnetAsync(estudiante.Carnet))
+                    {
+                        errorProvider1.SetError(
+                            txtCarnet,
+                            "El carnet ya existe en la base de datos.");
+                        return;
+                    }
+
+                    await estudianteRepository.InsertarAsync(estudiante);
+
+                    MessageBox.Show("Estudiante guardado correctamente.", "Registro",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                    LimpiarFormulario();
+                }
+                else
+                {
+                    estudiante.Id = estudianteEnEdicion.Id;
+                    estudiante.EsInterno = estudianteEnEdicion.EsInterno;
+                    estudiante.Activo = estudianteEnEdicion.Activo;
+
+                    await estudianteRepository.ActualizarAsync(estudiante);
+
+                    MessageBox.Show("Estudiante actualizado correctamente.", "Actualización",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                    cerrarFormulario = true;
+                }
+            }
+            catch (SqlException ex)
+            {
+                MostrarErrorBD(ex);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                UseWaitCursor = false;
+                btnGuardar.Enabled = true;
+            }
+
+            if (cerrarFormulario)
+                Close();   // se cierra después del finally para no tocar controles de un form ya cerrado
+        }
+        private static void MostrarErrorBD(SqlException ex)
+        {
+            MessageBox.Show($"Error de base de datos:\n{ex.Message}", "Error",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
+        private async void btnGuardar_Click(object sender, EventArgs e)
         {
 
 
@@ -608,5 +698,52 @@ namespace RegistroEstudiantes.Formularios
                 cboMunicipio.DataSource = null;
             }
         }
+        private async Task CargarCatalogosInicialesAsync()
+        {
+            Task<List<OpcionCatalogo>> tareaAreas =
+            catalogoRepository.ListarAreasasync();
+            Task<List<OpcionCatalogo>> tareaDepartamentos =
+            catalogoRepository.ListarDepartamentosAsync();
+            List<OpcionCatalogo>[] resultados =
+            await Task.WhenAll(
+            tareaAreas,
+            tareaDepartamentos);
+            cboArea.DisplayMember = "Nombre";
+            cboArea.ValueMember = "Id";
+            cboArea.DataSource = resultados[0];
+            cboArea.SelectedIndex = -1;
+            cboDepartamento.DisplayMember = "Nombre";
+            cboDepartamento.ValueMember = "Id";
+            cboDepartamento.DataSource = resultados[1];
+            cboDepartamento.SelectedIndex = -1;
+        }
+
+       /* private async void FrmRegistroEstudiante_Load(object sender, EventArgs e)
+        {
+            try
+            {
+                UseWaitCursor = true;
+                cargandoCatalogos = true;   // evita que los SelectedIndexChanged disparen cargas
+
+                await CargarCatalogosInicialesAsync();
+
+                if (estudianteEnEdicion != null)
+                    await CargarDatosEstudianteAsync();
+            }
+            catch (SqlException ex)
+            {
+                MostrarErrorBD(ex);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                cargandoCatalogos = false;
+                UseWaitCursor = false;
+        }
+            }*/
     }
 }

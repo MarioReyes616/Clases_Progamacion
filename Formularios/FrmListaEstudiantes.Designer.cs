@@ -41,6 +41,13 @@
             txtBuscar = new TextBox();
             btnEditar = new Button();
             btnDesactivar = new Button();
+            btnBloqueante = new Button();
+            btnProcesar = new Button();
+            btnCancelar = new Button();
+            prgProceso = new ProgressBar();
+            lblEstado = new Label();
+            txtLog = new TextBox();
+            btnResumenPLINQ = new Button();
             ((System.ComponentModel.ISupportInitialize)dgvEstudiantes).BeginInit();
             SuspendLayout();
             // 
@@ -160,11 +167,82 @@
             btnDesactivar.UseVisualStyleBackColor = true;
             btnDesactivar.Click += btnDesactivar_Click;
             // 
+            // btnBloqueante
+            // 
+            btnBloqueante.Location = new Point(470, 477);
+            btnBloqueante.Name = "btnBloqueante";
+            btnBloqueante.Size = new Size(199, 37);
+            btnBloqueante.TabIndex = 6;
+            btnBloqueante.Text = "Bloqueo";
+            btnBloqueante.UseVisualStyleBackColor = true;
+            btnBloqueante.Click += btnBloqueante_Click;
+            // 
+            // btnProcesar
+            // 
+            btnProcesar.Location = new Point(688, 478);
+            btnProcesar.Name = "btnProcesar";
+            btnProcesar.Size = new Size(199, 37);
+            btnProcesar.TabIndex = 7;
+            btnProcesar.Text = "Procesar";
+            btnProcesar.UseVisualStyleBackColor = true;
+            btnProcesar.Click += btnProcesar_Click;
+            // 
+            // btnCancelar
+            // 
+            btnCancelar.Location = new Point(579, 540);
+            btnCancelar.Name = "btnCancelar";
+            btnCancelar.Size = new Size(199, 37);
+            btnCancelar.TabIndex = 8;
+            btnCancelar.Text = "Cancelar";
+            btnCancelar.UseVisualStyleBackColor = true;
+            btnCancelar.Click += btnCancelar_Click;
+            // 
+            // prgProceso
+            // 
+            prgProceso.Location = new Point(61, 559);
+            prgProceso.Name = "prgProceso";
+            prgProceso.Size = new Size(414, 48);
+            prgProceso.TabIndex = 9;
+            // 
+            // lblEstado
+            // 
+            lblEstado.AutoSize = true;
+            lblEstado.Location = new Point(247, 621);
+            lblEstado.Name = "lblEstado";
+            lblEstado.Size = new Size(54, 20);
+            lblEstado.TabIndex = 10;
+            lblEstado.Text = "Estado";
+            // 
+            // txtLog
+            // 
+            txtLog.Location = new Point(577, 609);
+            txtLog.Multiline = true;
+            txtLog.Name = "txtLog";
+            txtLog.Size = new Size(319, 34);
+            txtLog.TabIndex = 11;
+            // 
+            // btnResumenPLINQ
+            // 
+            btnResumenPLINQ.Location = new Point(820, 76);
+            btnResumenPLINQ.Name = "btnResumenPLINQ";
+            btnResumenPLINQ.Size = new Size(219, 68);
+            btnResumenPLINQ.TabIndex = 12;
+            btnResumenPLINQ.Text = "Resumen de Estudiantes";
+            btnResumenPLINQ.UseVisualStyleBackColor = true;
+            btnResumenPLINQ.Click += btnResumenPLINQ_Click;
+            // 
             // FrmListaEstudiantes
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(800, 555);
+            ClientSize = new Size(1063, 681);
+            Controls.Add(btnResumenPLINQ);
+            Controls.Add(txtLog);
+            Controls.Add(lblEstado);
+            Controls.Add(prgProceso);
+            Controls.Add(btnCancelar);
+            Controls.Add(btnProcesar);
+            Controls.Add(btnBloqueante);
             Controls.Add(btnDesactivar);
             Controls.Add(btnEditar);
             Controls.Add(txtBuscar);
@@ -173,6 +251,7 @@
             Controls.Add(dgvEstudiantes);
             Name = "FrmListaEstudiantes";
             Text = "FrmListaEstudiantes";
+            Load += FrmListaEstudiantes_Load;
             ((System.ComponentModel.ISupportInitialize)dgvEstudiantes).EndInit();
             ResumeLayout(false);
             PerformLayout();
@@ -193,5 +272,12 @@
         private TextBox txtBuscar;
         private Button btnEditar;
         private Button btnDesactivar;
+        private Button btnBloqueante;
+        private Button btnProcesar;
+        private Button btnCancelar;
+        private ProgressBar prgProceso;
+        private Label lblEstado;
+        private TextBox txtLog;
+        private Button btnResumenPLINQ;
     }
 }

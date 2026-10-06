@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 
 namespace RegistroEstudiantes.Modelos
 {
-    public class OpcionCatalogo
+   
+
+public class OpcionCatalogo
     {
         public int Id { get; set; }
 
@@ -17,5 +19,7 @@ namespace RegistroEstudiantes.Modelos
         {
             return Nombre;
         }
+       
+      
     }
 }

@@ -1,17 +1,190 @@
 ﻿using Microsoft.Data.SqlClient;
 using RegistroEstudiantes.Modelos;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using static System.ComponentModel.Design.ObjectSelectorEditor;
 
 namespace RegistroEstudiantes.Datos
 {
     public class EstudianteRepository
     {
+        private static Estudiante MapearEstudiante(SqlDataReader lector)
+        {
+            string nombreArea = lector.GetString(
+ lector.GetOrdinal("Area"));
+            AreaConocimiento area = Enum.TryParse(
+            nombreArea,
+            true,
+            out AreaConocimiento areaSeleccionada)
+            ? areaSeleccionada
+            : AreaConocimiento.Otra;
+            return new Estudiante
+            {
+                Id = lector.GetGuid(lector.GetOrdinal("Id")),
+                Carnet = lector.GetString(lector.GetOrdinal("Carnet")),
+                Cedula = lector.IsDBNull(lector.GetOrdinal("Cedula"))
+ ? string.Empty
+ : lector.GetString(lector.GetOrdinal("Cedula")),
+                Nombres = lector.GetString(lector.GetOrdinal("Nombres")),
+                Apellidos = lector.GetString(lector.GetOrdinal("Apellidos")),
+                Sexo = Enum.Parse<Sexo>(lector.GetString(lector.GetOrdinal("Sexo"))),
+                FechaNacimiento = lector.GetDateTime(
+ lector.GetOrdinal("FechaNacimiento")),
+                Nacionalidad = lector.GetString(lector.GetOrdinal("Nacionalidad")),
+                NivelAcademico = lector.GetString(lector.GetOrdinal("NivelAcademico")),
+                TieneTutor = lector.GetBoolean(lector.GetOrdinal("TieneTutor")),
+                IdCarrera = lector.GetInt32(lector.GetOrdinal("IdCarrera")),
+                Carrera = lector.GetString(lector.GetOrdinal("Carrera")),
+                AreaConocimiento = area,
+                IdMunicipio = lector.GetInt32(lector.GetOrdinal("IdMunicipio")),
+                Municipio = lector.GetString(lector.GetOrdinal("Municipio")),
+                Departamento = lector.GetString(lector.GetOrdinal("Departamento")),
+                Etnia = lector.IsDBNull(lector.GetOrdinal("Etnia"))
+ ? string.Empty
+ : lector.GetString(lector.GetOrdinal("Etnia")),
+                Correo = lector.GetString(lector.GetOrdinal("Correo")),
+                Promedio = lector.GetDecimal(lector.GetOrdinal("Promedio")),
+                TieneDiscapacidadFisica = lector.GetBoolean(
+ lector.GetOrdinal("TieneDiscapacidadFisica")),
+                DescripcionDiscapacidad = lector.IsDBNull(
+ lector.GetOrdinal("DescripcionDiscapacidad"))
+ ? string.Empty
+ : lector.GetString(
+ lector.GetOrdinal("DescripcionDiscapacidad")),
+                EsInterno = lector.GetBoolean(lector.GetOrdinal("EsInterno")),
+                Activo = lector.GetBoolean(lector.GetOrdinal("Activo"))
+            };
+        }
+        public async Task<List<Estudiante>> ListarAsync(
+CancellationToken token = default)
+        {
+            const string sql = @"SELECT
+            e.Id,
+            e.Carnet,
+            e.Cedula,
+            e.Nombres,
+            e.Apellidos,
+            e.Sexo,
+            e.FechaNacimiento,
+            e.Nacionalidad,
+            e.NivelAcademico,
+            e.TieneTutor,
+
+            e.IdCarrera,
+            c.Nombre AS Carrera,
+            a.Nombre AS Area,
+            e.IdMunicipio,
+            m.Nombre AS Municipio,
+            d.Nombre AS Departamento,
+
+            e.Etnia,
+            e.Correo,
+            e.Promedio,
+            e.TieneDiscapacidadFisica,
+            e.DescripcionDiscapacidad,
+            e.EsInterno,
+            e.Activo
+
+        FROM Estudiantes e
+
+        INNER JOIN Carreras c
+            ON c.IdCarrera = e.IdCarrera
+
+        INNER JOIN AreasConocimiento a
+            ON a.IdArea = c.IdArea
+
+        INNER JOIN Municipios m
+            ON m.IdMunicipio = e.IdMunicipio
+
+        INNER JOIN Departamentos d
+            ON d.IdDepartamento = m.IdDepartamento
+
+        WHERE e.Activo = 1
+
+        ORDER BY e.Apellidos, e.Nombres;
+ 
+ ";
+            List<Estudiante> lista = new();
+            using SqlConnection conexion = ConexionBD.CrearConexion();
+            using SqlCommand comando = new(sql, conexion);
+            await conexion.OpenAsync(token);
+            using SqlDataReader lector =
+            await comando.ExecuteReaderAsync(token);
+            while (await lector.ReadAsync(token))
+            {
+                token.ThrowIfCancellationRequested();
+                lista.Add(MapearEstudiante(lector));
+            }
+            return lista;
+        }
+
+        public async Task<List<Estudiante>> BuscarAsync(
+ string texto,
+ CancellationToken token = default)
+        {
+            const string sql = @"
+ SELECT 
+            e.Id,
+            e.Carnet,
+            e.Cedula,
+            e.Nombres,
+            e.Apellidos,
+            e.Sexo,
+            e.FechaNacimiento,
+            e.Nacionalidad,
+            e.NivelAcademico,
+            e.TieneTutor,
+
+            e.IdCarrera,
+            c.Nombre AS Carrera,
+            a.Nombre AS Area,
+            e.IdMunicipio,
+            m.Nombre AS Municipio,
+            d.Nombre AS Departamento,
+
+            e.Etnia,
+            e.Correo,
+            e.Promedio,
+            e.TieneDiscapacidadFisica,
+            e.DescripcionDiscapacidad,
+            e.EsInterno,
+            e.Activo
+
+        FROM Estudiantes e
+
+        INNER JOIN Carreras c
+            ON c.IdCarrera = e.IdCarrera
+
+        INNER JOIN AreasConocimiento a
+            ON a.IdArea = c.IdArea
+
+        INNER JOIN Municipios m
+            ON m.IdMunicipio = e.IdMunicipio
+
+        INNER JOIN Departamentos d
+            ON d.IdDepartamento = m.IdDepartamento
+
+        WHERE e.Activo = 1
+
+        AND (
+            e.Carnet LIKE @Texto
+            OR e.Nombres LIKE @Texto
+            OR e.Apellidos LIKE @Texto
+        )
+
+        ORDER BY e.Apellidos, e.Nombres;
+    ";
+ 
+            List<Estudiante> lista = new();
+            using SqlConnection conexion = ConexionBD.CrearConexion();
+            using SqlCommand comando = new(sql, conexion);
+            comando.Parameters.AddWithValue(
+            "@Texto",
+            $"%{texto.Trim()}%");
+            await conexion.OpenAsync(token);
+            using SqlDataReader lector =
+            await comando.ExecuteReaderAsync(token);
+            while (await lector.ReadAsync(token))
+                lista.Add(MapearEstudiante(lector));
+            return lista;
+        }
         public List<Estudiante> Buscar(string texto)
         {
             const string sql = @"
@@ -215,6 +388,18 @@ namespace RegistroEstudiantes.Datos
 
             return lista;
         }
+
+        public async Task<bool> ExisteCarnetAsync(string carnet,
+ CancellationToken token = default)
+        {
+            const string sql = "SELECT COUNT(*) FROM Estudiantes WHERE Carnet = @Carnet;";
+            using SqlConnection conexion = ConexionBD.CrearConexion();
+            using SqlCommand comando = new(sql, conexion);
+            comando.Parameters.AddWithValue("@Carnet", carnet);
+            conexion.Open();
+            int cantidad = Convert.ToInt32(comando.ExecuteScalarAsync());
+            return cantidad > 0;
+        }
         public bool ExisteCarnet(string carnet)
         {
             const string sql = "SELECT COUNT(*) FROM Estudiantes WHERE Carnet = @Carnet;";
@@ -225,6 +410,9 @@ namespace RegistroEstudiantes.Datos
             int cantidad = Convert.ToInt32(comando.ExecuteScalar());
             return cantidad > 0;
         }
+
+
+
 
         public void Insertar(Estudiante e)
         {
@@ -586,7 +774,20 @@ namespace RegistroEstudiantes.Datos
 
             comando.ExecuteNonQuery();
         }
-
+        public async Task DesactivarAsync(
+ Guid id,
+ CancellationToken token = default)
+        {
+            const string sql = @"
+ UPDATE Estudiantes
+ SET Activo = 0
+ WHERE Id = @Id;";
+            using SqlConnection conexion = ConexionBD.CrearConexion();
+            using SqlCommand comando = new(sql, conexion);
+            comando.Parameters.AddWithValue("@Id", id);
+            await conexion.OpenAsync(token);
+            await comando.ExecuteNonQueryAsync(token);
+        }
         public void Desactivar(Guid id)
         {
             const string sql = "UPDATE Estudiantes SET Activo = 0 WHERE Id = @Id;";
@@ -595,6 +796,155 @@ namespace RegistroEstudiantes.Datos
             comando.Parameters.AddWithValue("@Id", id);
             conexion.Open();
             comando.ExecuteNonQuery();
+        }
+        public async Task InsertarAsync(
+    Estudiante estudiante,
+    CancellationToken token = default)
+        {
+            const string sql = @"
+        INSERT INTO Estudiantes
+        (
+            Id,
+            Carnet,
+            Cedula,
+            Nombres,
+            Apellidos,
+            Sexo,
+            FechaNacimiento,
+            Nacionalidad,
+            NivelAcademico,
+            TieneTutor,
+            IdCarrera,
+            IdMunicipio,
+            Etnia,
+            Correo,
+            Promedio,
+            TieneDiscapacidadFisica,
+            DescripcionDiscapacidad,
+            EsInterno,
+            Activo
+        )
+        VALUES
+        (
+            @Id,
+            @Carnet,
+            @Cedula,
+            @Nombres,
+            @Apellidos,
+            @Sexo,
+            @FechaNacimiento,
+            @Nacionalidad,
+            @NivelAcademico,
+            @TieneTutor,
+            @IdCarrera,
+            @IdMunicipio,
+            @Etnia,
+            @Correo,
+            @Promedio,
+            @TieneDiscapacidadFisica,
+            @DescripcionDiscapacidad,
+            @EsInterno,
+            @Activo
+        );";
+
+            using SqlConnection conexion = ConexionBD.CrearConexion();
+            using SqlCommand comando = new(sql, conexion);
+
+            comando.Parameters.AddWithValue("@Id", estudiante.Id);
+            comando.Parameters.AddWithValue("@Carnet", estudiante.Carnet);
+            comando.Parameters.AddWithValue("@Cedula", estudiante.Cedula);
+            comando.Parameters.AddWithValue("@Nombres", estudiante.Nombres);
+            comando.Parameters.AddWithValue("@Apellidos", estudiante.Apellidos);
+            comando.Parameters.AddWithValue("@Sexo", estudiante.Sexo.ToString());
+            comando.Parameters.AddWithValue("@FechaNacimiento", estudiante.FechaNacimiento);
+            comando.Parameters.AddWithValue("@Nacionalidad", estudiante.Nacionalidad);
+            comando.Parameters.AddWithValue("@NivelAcademico", estudiante.NivelAcademico);
+            comando.Parameters.AddWithValue("@TieneTutor", estudiante.TieneTutor);
+            comando.Parameters.AddWithValue("@IdCarrera", estudiante.IdCarrera);
+            comando.Parameters.AddWithValue("@IdMunicipio", estudiante.IdMunicipio);
+            comando.Parameters.AddWithValue("@Etnia", estudiante.Etnia);
+            comando.Parameters.AddWithValue("@Correo", estudiante.Correo);
+            comando.Parameters.AddWithValue("@Promedio", estudiante.Promedio);
+            comando.Parameters.AddWithValue(
+                "@TieneDiscapacidadFisica",
+                estudiante.TieneDiscapacidadFisica);
+
+            comando.Parameters.AddWithValue(
+                "@DescripcionDiscapacidad",
+                estudiante.DescripcionDiscapacidad);
+
+            comando.Parameters.AddWithValue(
+                "@EsInterno",
+                estudiante.EsInterno);
+
+            comando.Parameters.AddWithValue(
+                "@Activo",
+                estudiante.Activo);
+
+            await conexion.OpenAsync(token);
+
+            await comando.ExecuteNonQueryAsync(token);
+        }
+
+        public async Task ActualizarAsync(
+    Estudiante estudiante,
+    CancellationToken token = default)
+        {
+            const string sql = @"
+        UPDATE Estudiantes
+        SET
+            Carnet = @Carnet,
+            Cedula = @Cedula,
+            Nombres = @Nombres,
+            Apellidos = @Apellidos,
+            Sexo = @Sexo,
+            FechaNacimiento = @FechaNacimiento,
+            Nacionalidad = @Nacionalidad,
+            NivelAcademico = @NivelAcademico,
+            TieneTutor = @TieneTutor,
+            IdCarrera = @IdCarrera,
+            IdMunicipio = @IdMunicipio,
+            Etnia = @Etnia,
+            Correo = @Correo,
+            Promedio = @Promedio,
+            TieneDiscapacidadFisica = @TieneDiscapacidadFisica,
+            DescripcionDiscapacidad = @DescripcionDiscapacidad,
+            EsInterno = @EsInterno
+        WHERE Id = @Id;";
+
+            using SqlConnection conexion = ConexionBD.CrearConexion();
+            using SqlCommand comando = new(sql, conexion);
+
+            comando.Parameters.AddWithValue("@Id", estudiante.Id);
+            comando.Parameters.AddWithValue("@Carnet", estudiante.Carnet);
+            comando.Parameters.AddWithValue("@Cedula", estudiante.Cedula);
+            comando.Parameters.AddWithValue("@Nombres", estudiante.Nombres);
+            comando.Parameters.AddWithValue("@Apellidos", estudiante.Apellidos);
+            comando.Parameters.AddWithValue("@Sexo", estudiante.Sexo.ToString());
+            comando.Parameters.AddWithValue("@FechaNacimiento", estudiante.FechaNacimiento);
+            comando.Parameters.AddWithValue("@Nacionalidad", estudiante.Nacionalidad);
+            comando.Parameters.AddWithValue("@NivelAcademico", estudiante.NivelAcademico);
+            comando.Parameters.AddWithValue("@TieneTutor", estudiante.TieneTutor);
+            comando.Parameters.AddWithValue("@IdCarrera", estudiante.IdCarrera);
+            comando.Parameters.AddWithValue("@IdMunicipio", estudiante.IdMunicipio);
+            comando.Parameters.AddWithValue("@Etnia", estudiante.Etnia);
+            comando.Parameters.AddWithValue("@Correo", estudiante.Correo);
+            comando.Parameters.AddWithValue("@Promedio", estudiante.Promedio);
+            comando.Parameters.AddWithValue(
+                "@TieneDiscapacidadFisica",
+                estudiante.TieneDiscapacidadFisica);
+
+            comando.Parameters.AddWithValue(
+                "@DescripcionDiscapacidad",
+                estudiante.DescripcionDiscapacidad);
+
+            comando.Parameters.AddWithValue(
+                "@EsInterno",
+                estudiante.EsInterno);
+
+            await conexion.OpenAsync(token);
+
+            await comando.ExecuteNonQueryAsync(token);
         }
 
 

@@ -4,9 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RegistroEstudiantes.Clase_Prueba1
+namespace RegistroEstudiantes.Modelos
 {
-    internal class ClasePrueba
-    {
-    }
+    public record ProgresoTarea(
+ int Actual,
+ int Total,
+ string Mensaje);
 }
